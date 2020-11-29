@@ -1,0 +1,47 @@
+version: '3.8'
+#Definimos los servicios que vamos a utilizar
+services:
+  #Creamos el servicio para la base de datos
+  mysqldb:
+    image: mysqldb
+    build: ./BaseDeDatos
+    container_name: mysql_db
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=password
+      - MYSQL_USER=userdb
+      - MYSQL_PASSWORD=password
+      - MYSQL_DATABASE=Proyecto
+    networks: 
+      - app
+  #Creamos el servicio para la el cuaderno de jupyter-notebook
+  jupyter-notebook:
+    image: continuumio/anaconda3
+    command: jupyter notebook --port=8888 --no-browser --ip=0.0.0.0 --allow-root 
+    container_name: jupyter-notebook
+    networks: 
+      - app
+    depends_on: 
+      - mysqldb
+    volumes: 
+      - ./notebooks:/notebooks
+    ports: 
+      - 8888:8888
+  #Creamos el servicio para el despliegue de la aplicacion
+  dash:
+    build: ./pythonApp
+    depends_on: 
+      - mysqldb
+    container_name: dash
+    networks: 
+      - app
+    ports:
+      - 8060:8060
+    environment: 
+      - VIRTUAL_HOST=dash.arthoughts.local
+    restart: on-failure
+#Red a la que van a estar conectador lo contenedores
+networks: 
+  app:
+    driver: bridge
